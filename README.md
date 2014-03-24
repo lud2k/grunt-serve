@@ -5,7 +5,9 @@
 ## Getting Started
 This plugin requires Grunt `~0.4.0`
 
-If you haven't used [Grunt](http://gruntjs.com/) before, be sure to check out the [Getting Started](http://gruntjs.com/getting-started) guide, as it explains how to create a [Gruntfile](http://gruntjs.com/sample-gruntfile) as well as install and use Grunt plugins. Once you're familiar with that process, you may install this plugin with this command:
+If you haven't used [Grunt](http://gruntjs.com/) before, be sure to check out the [Getting Started](http://gruntjs.com/getting-started)
+guide, as it explains how to create a [Gruntfile](http://gruntjs.com/sample-gruntfile) as well as install and use Grunt plugins. Once
+you're familiar with that process, you may install this plugin with this command:
 
 ```shell
 npm install grunt-serve --save-dev
@@ -41,41 +43,83 @@ The port that the server should be running on.
 Type: `Object`
 Default value: `'null'`
 
-Aliases you want to configure. Check the examples below!
+Aliases allows you to configure what tasks should be ran and what file should
+be returned for a specific path. In the following example, calling http://localhost:9000/client.js
+will trigger running the tasks 'html2js', 'concat' and 'minify'. When all the tasks have been executed
+the file client.min.js will be returned.
+
+
+```javascript
+	'aliases': {
+		'client.js': {
+			tasks: ['html2js', 'concat', 'minify'],
+			output: 'client.min.js'
+		},
+		...
+	}
+```
+
+#### options.silently
+Type: `Boolean`
+Default value: `'false'`
+
+Controls whether or not to print the build logs in the terminal.
 
 ### Usage Examples
 
 #### Basic Use
 
-In this example, `grunt serve` will start a web server at `http://localhost:9001/`.
-If you go to http://localhost:9001/html2js,concat/client.js it will execute the tasks 'html2js' and 'concat' and return the content of the file 'client.js'.
-If you go to http://localhost:9001/cssmin/client.css it will execute the task 'cssmin' and return the content of the file 'client.css'.
+In this example, `grunt serve` will start a web server at `http://localhost:9000/`.
+ * If you go to http://localhost:9000/html2js,concat/client.js it will execute the tasks 'html2js' and 'concat' and return the content of the file 'client.js'.
+ * If you go to http://localhost:9000/cssmin/client.css it will execute the task 'cssmin' and return the content of the file 'client.css'.
+ * If you go to http://localhost:9000/concat it will execute the task 'concat' and return the stdout and stderr that grunt outputed.
 
 ```javascript
 // Project configuration.
 grunt.initConfig({
 	serve: {
 		options: {
-			port: 9001
+			port: 9000
 		}
 	}
 });
 ```
 
-#### Alias Use
+#### Using Aliases
 
-In this example, `grunt serve` will start a web server at `http://localhost:9001/`.
-If you go to http://localhost:9001/client.js it will execute the tasks 'html2js' and 'concat' and return the content of the file 'client.js'.
+In this example, `grunt serve` will start a web server at `http://localhost:9000/`.
+ * If you go to http://localhost:9000/client.js it will execute the tasks 'html2js' and 'concat' and return the content of the file 'client.js'.
 
 ```javascript
 // Project configuration.
 grunt.initConfig({
 	serve: {
 		options: {
-			port: 9001,
+			port: 9000,
 			'client.js': {
 				tasks: ['html2js', 'concat'],
 				output: 'client.js'
+			}
+		}
+	}
+});
+```
+
+#### Output logs
+
+In this example, `grunt serve` will start a web server at `http://localhost:9000/`.
+ * If you go to http://localhost:9000/client.js it will execute the tasks 'html2js' and 'concat' and return the stdout and stderr
+that were outputed by grunt while running those tasks.
+
+```javascript
+// Project configuration.
+grunt.initConfig({
+	serve: {
+		options: {
+			port: 9000,
+			'client.js': {
+				tasks: ['html2js', 'concat'],
+				output: 'stdout'
 			}
 		}
 	}

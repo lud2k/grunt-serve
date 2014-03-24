@@ -10,8 +10,7 @@
 
 var connect = require('connect'),
 	http = require('http'),
-	childProcess = require("child_process"),
-	options;
+	childProcess = require("child_process");
 
 module.exports = function(grunt) {
 	// register serve task
@@ -20,14 +19,15 @@ module.exports = function(grunt) {
 	    var done = this.async();
 	    
 		// get options
-		options = this.options({
-			port : 9000
+		var options = this.options({
+			port: 9000,
+			silently: false
 		});
 		
 		// start an HTTP server
 		http.createServer(function(request, response) {
 			// forward request
-			handleRequest(request, response, grunt);
+			handleRequest(request, response, grunt, options);
 			
 		}).listen(options.port);
 
@@ -43,7 +43,7 @@ module.exports = function(grunt) {
 	});
 };
 
-function handleRequest(request, response, grunt) {
+function handleRequest(request, response, grunt, options) {
 	// extract info form url
 	var url = request.url,
 		match = /\/([^\/]+)(\/([^\/]+))?/.exec(url);
@@ -56,12 +56,15 @@ function handleRequest(request, response, grunt) {
 	}
 	
 	if (!match) {
-		writeError(response, 'Invalid request: Missing parameters.\n'+
+		writeError(response, '<b>Invalid request: Missing parameters.</b>\n'+
 				'Url should contain the name of one of the aliases or tasks to be ran.\n\n'+
-				'Exemples:\n'+
-				'http://localhost:'+options.port+'/{{alias}}\n'+
-				'http://localhost:'+options.port+'/{{task1}},{{task2}},...\n'+
-				'http://localhost:'+options.port+'/{{tasks}}/{{file}}\n');
+				'<b>Exemples:</b>\n'+
+				'- http://'+request.headers.host+'/{{alias}}\n'+
+				'- http://'+request.headers.host+'/{{task1}},{{task2}},...\n'+
+				'- http://'+request.headers.host+'/{{tasks}}/{{file}}\n\n'+
+				'<b>Available Aliases:</b>\n'+
+				aliasesToString(options.aliases)
+				);
 		return;
 	}
 	
@@ -86,9 +89,24 @@ function handleRequest(request, response, grunt) {
 	
 	// execute tasks
 	childProcess.exec('grunt '+tasks.join(' '), function(error, stdout, stderr) {
+		// should we print the stdout?
+		if (!options.silently) {
+			// print stdout
+			console.log(stdout);
+			
+			// print stderr (if any)
+			if (stderr) {
+				console.log(stderr);
+			}
+		}
+		
 		// any error? write logs and return
 		if (stderr || error) {
-			writeError(response, 'An error happened while running tasks:\n'+formatStdout(stdout));
+			var err = formatStdout(stderr) || '(no error output)\n',
+				out = formatStdout(stdout) || '(no standard output)\n';
+			writeError(response, '<b>An error happened while running tasks!</b>\n\n'+
+					'Standard Ouput:\n'+out+'\n'+
+					'Standard Error:\n'+err);
 			return;
 		}
 		
@@ -105,11 +123,24 @@ function handleRequest(request, response, grunt) {
 				response.end(grunt.file.read(output));
 				
 			} else {
-				writeError(response, 'Could not find output file: '+output);
+				writeError(response, '<b>Could not find output file: '+output+'</b>\n'+
+						'The file \''+output+'\' was supposed to be ouputed here but couldn\'t be found.');
 			}
 	    }
 	});
 };
+
+function aliasesToString(aliases) {
+	var ret = '';
+	for (var alias in aliases) {
+		if (ret) ret += '\n'; 
+		ret += '- '+alias;
+	}
+	if (!ret) {
+		ret = '(no aliases were configured)';
+	}
+	return ret;
+}
 
 function headersForOutput(output, contentType) {
 	if (!contentType) {
@@ -121,6 +152,10 @@ function headersForOutput(output, contentType) {
 			contentType = 'text/javascript';
 		} else if (output.match(/\.css$/i)) {
 			contentType = 'text/css';
+		} else if (output.match(/\.xml$/i)) {
+			contentType = 'text/xml';
+		} else if (output.match(/\.json$/i)) {
+			contentType = 'text/json';
 		} else if (output.match(/\.html$/i)) {
 			contentType = 'text/html';
 		}
@@ -138,6 +173,7 @@ function formatStdout(stdout) {
 		opened = false,
 		colors = {
 			'0': '#000000',
+			'30': '#000000',
 			'31': '#CC0000',
 			'32': '#00CC00',
 			'33': '#CCCC00',
@@ -150,11 +186,16 @@ function formatStdout(stdout) {
 	while ((match = regex.exec(stdout))) {
 		var code = match[1]+'',
 			start = stdout.substr(0, match.index),
-			end = stdout.substr(match.index+3+code.length),
-			colorEnd = opened ? '</span>' : '',
-			colorStart = '<span style="color: '+colors[code]+'">';
+			end = stdout.substr(match.index+3+code.length);
 		
-		stdout = start + colorEnd + colorStart + end;
+		if (code) {
+			var colorEnd = opened ? '</span>' : '',
+				colorStart = '<span style="color: '+colors[code]+'">';
+			stdout = start + colorEnd + colorStart + end;
+			
+		} else {
+			stdout = start + end;
+		}
 		
 		opened = true;
 	}
