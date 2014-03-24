@@ -34,14 +34,14 @@ if will execute the tasks that you have configured and return you the content of
 ### Options
 
 #### options.port
-Type: `Integer`
-Default value: `'9000'`
+Type: `Integer`  
+Default value: `9000`
 
 The port that the server should be running on.
 
 #### options.aliases
-Type: `Object`
-Default value: `'null'`
+Type: `Object`  
+Default value: `null`
 
 Aliases allows you to configure what tasks should be ran and what file should
 be returned for a specific path. In the following example, calling http://localhost:9000/client.js
@@ -60,8 +60,8 @@ the file client.min.js will be returned.
 ```
 
 #### options.silently
-Type: `Boolean`
-Default value: `'false'`
+Type: `Boolean`  
+Default value: `false`
 
 Controls whether or not to print the build logs in the terminal.
 
