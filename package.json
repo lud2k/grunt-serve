@@ -24,9 +24,6 @@
   "engines": {
     "node": ">= 0.8.0"
   },
-  "scripts": {
-    "test": "grunt test"
-  },
   "devDependencies": {
     "grunt-contrib-jshint": "~0.1.1",
     "grunt-contrib-clean": "~0.4.0",
@@ -39,13 +36,13 @@
     "grunt": "~0.4.0"
   },
   "keywords": [
-    "gruntplugin"
+    "serve", "http", "build", "request"
   ],
   "dependencies": {
     "connect": "~2.13.0"
   },
   "readmeFilename": "README.md",
-  "_id": "grunt-serve@0.1.0",
-  "_from": "grunt-serve@~0.1.0",
-  "_resolved": "https://registry.npmjs.org/grunt-serve/-/grunt-serve-0.1.0.tgz"
+  "_id": "grunt-serve@0.1.1",
+  "_from": "grunt-serve@~0.1.1",
+  "_resolved": "https://registry.npmjs.org/grunt-serve/-/grunt-serve-0.1.1.tgz"
 }

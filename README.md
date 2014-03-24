@@ -129,3 +129,5 @@ grunt.initConfig({
 ## Release History
 
  * 2014-03-23   0.1.0    First Release
+ * 2014-03-23   0.1.1    Minor improvements
+ 
