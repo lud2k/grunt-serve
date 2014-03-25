@@ -25,11 +25,37 @@ grunt.loadNpmTasks('grunt-serve');
 
 This task allows creates a http request that can be called to run tasks.
 
-One possible usage would be "on the fly" generation of the code when you refresh a webpage page.
-While developing a website that contains a JavaScript generate with grunt, this allows you to avoid recompiling with grunt every time you
-make a change to a source file. Instead of including the real JavaScript file, you can just include a script tag pointing to this
-local server <script src="http://localhost:9000/client.js"></script>. Once "http://localhost:9000/client.js" is called by your browser,
-if will execute the tasks that you have configured and return you the content of "client.js.
+#### Rebuild on browser refresh
+
+One possible usage of the plugin is triggering automatic build when you refresh a page in your browser.
+When developing a web project that uses a lot of JavaScript, you will find yourself loosing lots of time switching
+to the command line, building the script, switching back to the browser, then pressing refresh to see the result.
+This plugin allows you to avoid switching to the command line. You simply need to replace the script in your html
+page by the local server that this task creates. Next time you refresh, the browser will call this local server
+that will run the grunt tasks you defined and will return the generated file.
+
+An easy way to setup this would be as follow:
+
+```html
+	<!doctype html>
+	<html>
+		<head>
+			<title>My Website</title>
+			{{ if development }}
+				<!-- regenerated files -->
+				<link href="http://localhost:9000/client.css" rel="stylesheet" type="text/css" />
+				<script src="http://localhost:9000/client.js"></script>
+			{{ else if (production) }}
+				<!-- static files -->
+				<link href="client.css" rel="stylesheet" type="text/css" />
+				<script src="client.js"></script>
+			{{ endif }}
+		</head>
+		<body>
+			<!-- page content -->
+		</body>
+	</html>
+```
 
 ### Options
 
@@ -130,4 +156,5 @@ grunt.initConfig({
 
  * 2014-03-23   0.1.0    First Release
  * 2014-03-23   0.1.1    Minor improvements
+ * 2014-03-24   0.1.2    Documentation changes
  
