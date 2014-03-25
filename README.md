@@ -157,4 +157,5 @@ grunt.initConfig({
  * 2014-03-23   0.1.0    First Release
  * 2014-03-23   0.1.1    Minor improvements
  * 2014-03-24   0.1.2    Documentation changes
+ * 2014-03-24   0.1.3    Improved URL parsing
  

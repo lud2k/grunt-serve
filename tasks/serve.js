@@ -46,7 +46,7 @@ module.exports = function(grunt) {
 function handleRequest(request, response, grunt, options) {
 	// extract info form url
 	var url = request.url,
-		match = /\/([^\/]+)(\/([^\/]+))?/.exec(url);
+		match = /\/([^\/?#]+)(\/([^\/?#]+))?/.exec(url);
 	
 	// is it a favicon request?
 	if (url == '/favicon.ico') {
