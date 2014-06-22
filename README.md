@@ -28,7 +28,7 @@ This task allows creates a http request that can be called to run tasks.
 #### Rebuild on browser refresh
 
 One possible usage of the plugin is triggering automatic build when you refresh a page in your browser.
-When developing a web project that uses a lot of JavaScript, you will find yourself loosing lots of time switching
+When developing a web project that uses a lot of JavaScript, you will find yourself losing lots of time switching
 to the command line, building the script, switching back to the browser, then pressing refresh to see the result.
 This plugin allows you to avoid switching to the command line. You simply need to replace the script in your html
 page by the local server that this task creates. Next time you refresh, the browser will call this local server
