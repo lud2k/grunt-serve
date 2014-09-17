@@ -52,6 +52,7 @@ function handleRequest(request, response, grunt, options) {
 	if (url == '/favicon.ico') {
 		// just return 404
         response.writeHead(404);
+        response.end('File Not Found');
 		return;
 	}
 	
