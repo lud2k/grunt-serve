@@ -1,6 +1,6 @@
 # grunt-serve
 
-> Starts a http server that can be called to run tasks
+> Starts a http server that can be called to run Grunt tasks and serve files.
 
 ## Getting Started
 This plugin requires Grunt `~0.4.0`
@@ -23,7 +23,16 @@ grunt.loadNpmTasks('grunt-serve');
 
 ### Overview
 
-This task allows creates a http request that can be called to run tasks.
+This task allows you to create a http server that can be called to run Grunt tasks and serve files.
+
+Once the task is ran, The HTTP server can be accessed by loading the page `http://localhost:9000/`.
+This will show you your configured aliases as well as the files that can be access using this server.
+
+Here is a summary of how the server will behave:
+ * Calls to / will display a page with some information (configures aliases, files that can be served, directory browsing, ...).
+ * Calls to /task/{task1},{task2}/{output} will run the given tasks and return the file named output (see example later).
+ * Calls to /{alias} ({alias} being an alias that you have configured) will run the tasks defined for that alias.
+ * Calls did not match the rules above will try to return the content of a file for the given path (/index.html will return the file index.html located in the folder where grunt was launched).
 
 #### Rebuild on browser refresh
 
@@ -93,12 +102,12 @@ Controls whether or not to print the build logs in the terminal.
 
 ### Usage Examples
 
-#### Basic Use
+#### Basic Use - Running tasks with zero configuration
 
-In this example, `grunt serve` will start a web server at `http://localhost:9000/`.
- * If you go to http://localhost:9000/html2js,concat/client.js it will execute the tasks 'html2js' and 'concat' and return the content of the file 'client.js'.
- * If you go to http://localhost:9000/cssmin/client.css it will execute the task 'cssmin' and return the content of the file 'client.css'.
- * If you go to http://localhost:9000/concat it will execute the task 'concat' and return the stdout and stderr that grunt outputed.
+In this example, `grunt serve` will start a web server at `http://localhost:9000/`. Any call to /task will trigger a build as described below.
+ * If you go to http://localhost:9000/task/html2js,concat/client.js it will execute the tasks 'html2js' and 'concat' and return the content of the file 'client.js'.
+ * If you go to http://localhost:9000/task/cssmin/client.css it will execute the task 'cssmin' and return the content of the file 'client.css'.
+ * If you go to http://localhost:9000/task/concat it will execute the task 'concat' and return the stdout and stderr that grunt outputed.
 
 ```javascript
 // Project configuration.
@@ -152,11 +161,31 @@ grunt.initConfig({
 });
 ```
 
+#### Serve files
+
+In this example, `grunt serve` will start a web server at `http://localhost:9000/`.
+
+If you are a request did not match any alias, the server will try to find a file matching the request path.
+For example if you load `http://localhost:9000/pages/index.html` (and no alias for 'pages/index.html' was configured)
+the server check if the file "pages/index.html" exists. If it does, it will return it. Otherwise it will return a 
+404 Not found page.
+
+```javascript
+// Project configuration.
+grunt.initConfig({
+	serve: {
+		options: {
+			port: 9000
+		}
+	}
+});
+```
+
 ## Release History
 
- * 2014-03-23   0.1.0    First Release
- * 2014-03-23   0.1.1    Minor improvements
- * 2014-03-24   0.1.2    Documentation changes
- * 2014-03-24   0.1.3    Improved URL parsing
+ * 2014-03-23   0.1.0    First Release
+ * 2014-03-23   0.1.1    Minor improvements
+ * 2014-03-24   0.1.2    Documentation changes
+ * 2014-03-24   0.1.3    Improved URL parsing
  * 2014-09-16   0.1.4    Fixed unresponsive server issue
- 
+ * 2014-09-27   0.1.5    Added serves files and nicer pages

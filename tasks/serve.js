@@ -8,10 +8,29 @@
 
 'use strict';
 
+// requires
 var connect = require('connect'),
 	http = require('http'),
-	childProcess = require("child_process");
+	childProcess = require("child_process"),
+	fs = require('fs'),
+	dot = require('dot'),
+	paths = require('path');
 
+// load all template files
+var loadTemplate = function(name) {
+		return dot.template(fs.readFileSync(paths.join(__dirname, '..', 'pages', name)))
+	},
+	indexTmpl = loadTemplate('index.html'),
+	notFoundTmpl = loadTemplate('not_found.html'),
+	directoryTmpl = loadTemplate('directory.html'),
+	errorTmpl = loadTemplate('error.html'),
+	successTmpl = loadTemplate('error.html'),
+	gruntErrorTmpl = loadTemplate('grunt_error.html'),
+	missingTmpl = loadTemplate('missing.html');
+
+/**
+ * Definition of the exported method that will be called by Grunt on initialization.
+ */
 module.exports = function(grunt) {
 	// register serve task
 	grunt.registerTask('serve', 'Starts a http server that can be called to run tasks.', function() {
@@ -26,9 +45,15 @@ module.exports = function(grunt) {
 		
 		// start an HTTP server
 		http.createServer(function(request, response) {
-			// forward request
-			handleRequest(request, response, grunt, options);
-			
+			try {
+				// forward request
+				handleRequest(request, response, grunt, options);
+			} catch(e) {
+				// show error
+			    render(response, 500, errorTmpl, {
+			    	error: 'Unexpected JavaScript exception "'+e+'"<br />'+e.stack.replace(/\n+/g, '<br />')
+			    });
+			}
 		}).listen(options.port);
 
 		// handle SIGINT signal properly
@@ -41,109 +66,190 @@ module.exports = function(grunt) {
         grunt.log.write('Server is running on port '+options.port+'...\n');
         grunt.log.write('Press CTRL+C at any time to terminate it.\n');
 	});
-};
+}
 
+/**
+ * Handles all requests to the server.
+ * Each call with trigger a call to the following function.
+ */
 function handleRequest(request, response, grunt, options) {
-	// extract info form url
+	// get url from request
 	var url = request.url,
-		match = /\/([^\/?#]+)(\/([^\/?#]+))?/.exec(url);
+		path = /[^?#]+/.exec(url)[0];
 	
-	// is it a favicon request?
-	if (url == '/favicon.ico') {
-		// just return 404
-        response.writeHead(404);
-        response.end('File Not Found');
+	// main page request?
+	if (path == '/') {
+		render(response, 200, indexTmpl, {
+	    	host: request.headers.host,
+	    	aliases: mapToArray(options.aliases, 'name'),
+	    	files: filesInDirectory(grunt, '.')
+	    });
 		return;
 	}
-	
-	if (!match) {
-		writeError(response, '<b>Invalid request: Missing parameters.</b>\n'+
-				'Url should contain the name of one of the aliases or tasks to be ran.\n\n'+
-				'<b>Exemples:</b>\n'+
-				'- http://'+request.headers.host+'/{{alias}}\n'+
-				'- http://'+request.headers.host+'/{{task1}},{{task2}},...\n'+
-				'- http://'+request.headers.host+'/{{tasks}}/{{file}}\n\n'+
-				'<b>Available Aliases:</b>\n'+
-				aliasesToString(options.aliases)
-				);
-		return;
-	}
-	
-	// get tasks to execute
-	var task = match[1],
-		output = match[3],
-		tasks = task,
-		contentType;
 
-	// is this task an alias?
-	var aliases = options.aliases;
-	if (aliases && aliases[task]) {
-		// run the tasks of the alias
-		tasks = aliases[task].tasks;
-		output = aliases[task].output;
-		contentType = aliases[task].contentType;
-		
-	} else {
-		// treat task as a list of tasks comma separated
-		tasks = task.split(',')
-	}
-	
-	// execute tasks
-	childProcess.exec('grunt '+tasks.join(' '), function(error, stdout, stderr) {
-		// should we print the stdout?
-		if (!options.silently) {
-			// print stdout
-			console.log(stdout);
+	// is this url for /task/?
+	if (path.substr(0, 6) == '/task/') {
+		// get parameters
+		var match = /\/task\/([^\/]+)(\/(.+))?/.exec(url);
+		if (match) {
+			var tasks = match[1].split(','),
+				output = match[3];
 			
-			// print stderr (if any)
-			if (stderr) {
-				console.log(stderr);
-			}
-		}
-		
-		// any error? write logs and return
-		if (stderr || error) {
-			var err = formatStdout(stderr) || '(no error output)\n',
-				out = formatStdout(stdout) || '(no standard output)\n';
-			writeError(response, '<b>An error happened while running tasks!</b>\n\n'+
-					'Standard Ouput:\n'+out+'\n'+
-					'Standard Error:\n'+err);
+			// run tasks
+			executeTasks(request, response, grunt, options, tasks, output, null);
 			return;
 		}
-		
-	    // the the output stdout?
-	    if (output == 'stdout' || !output) {
-		    // write stdout
-	        response.writeHead(200, {"Content-Type": "text/html"});
-	    	response.end('<html><body><pre>'+formatStdout(stdout)+'</pre></body></html>');
-		    
-	    } else {
-			if (grunt.file.exists(output)) {
-			    // write file and headers
-			    response.writeHead(200, headersForOutput(output, contentType));
-				response.end(grunt.file.read(output));
-				
-			} else {
-				writeError(response, '<b>Could not find output file: '+output+'</b>\n'+
-						'The file \''+output+'\' was supposed to be ouputed here but couldn\'t be found.');
-			}
-	    }
-	});
-};
-
-function aliasesToString(aliases) {
-	var ret = '';
-	for (var alias in aliases) {
-		if (ret) ret += '\n'; 
-		ret += '- '+alias;
 	}
-	if (!ret) {
-		ret = '(no aliases were configured)';
+	
+	// does this path match an alias?
+	var aliasName = path.substr(1);
+	var aliases = options.aliases;
+	if (aliases && aliases[aliasName]) {
+		// get alias configuration
+		var tasks = aliases[aliasName].tasks,
+			output = aliases[aliasName].output,
+			contentType = aliases[aliasName].contentType;
+		
+		// run tasks
+		executeTasks(request, response, grunt, options, tasks, output, contentType);
+		return;
+	}
+	
+	// is this path a file?
+	var file = path.substr(1);
+    if (grunt.file.exists(file)) {
+    	var stats = fs.statSync(file);
+    	if (stats.isDirectory()) {
+    		// show directory content
+    		render(response, 200, directoryTmpl, {
+    	    	files: filesInDirectory(grunt, file)
+    	    });
+    		
+    	} else {
+    		// return file
+    		write(response, 200, grunt, file);
+    	}
+    } else {
+    	render(response, 404, notFoundTmpl);
+    }
+}
+
+/**
+ * Runs Grunt to execute the given tasks.
+ */
+function executeTasks(request, response, grunt, options, tasks, output, contentType) {
+	// execute tasks
+	childProcess.exec('grunt '+tasks.join(' '), function(error, stdout, stderr) {
+		try {
+			// should we print the stdout?
+			if (!options.silently) {
+				// print stdout
+				console.log(stdout);
+				
+				// print stderr (if any)
+				if (stderr) {
+					console.log(stderr);
+				}
+			}
+			
+			// any error? write logs and return
+			if (stderr || error) {
+			    render(response, 500, gruntErrorTmpl, {
+			    	tasks: tasks,
+			    	stdout: formatStdout(stdout),
+			    	stderr: formatStdout(stderr)
+			    });
+				return;
+			}
+			
+		    // the the output stdout?
+		    if (output == 'stdout' || !output) {
+			    // write stdout
+		    	render(response, 200, successTmpl, {
+		    		output: formatStdout(stdout)
+		    	});
+			    
+		    } else {
+		    	// requested output file exists?
+				if (grunt.file.exists(output)) {
+					// write file
+		    		write(response, 200, grunt, output, contentType);
+				} else {
+					// show file not found
+				    render(response, 500, missingTmpl, {
+				    	output: output
+				    });
+				}
+		    }
+		} catch(e) {
+			// show error
+		    render(response, 500, errorTmpl, {
+		    	error: 'Unexpected JavaScript exception "'+e+'"<br />'+e.stack.replace(/\n+/g, '<br />')
+		    });
+		}
+	});
+}
+
+/**
+ * Renders an html page and ends the request.
+ */
+function render(response, code, template, data) {
+    response.writeHead(code, {"Content-Type": "text/html"});
+    response.end(template(data));
+}
+
+/**
+ * Writes a file's content to the output and ends the request.
+ */
+function write(response, code, grunt, file, contentType) {
+    response.writeHead(200, headersForOutput(file, contentType));
+	response.end(grunt.file.read(file));
+}
+
+/**
+ * Converts a map to an array adding the key to the value.
+ */
+function mapToArray(map, name) {
+	var ret = [];
+	for (var key in map) {
+		map[key][name] = key;
+		ret.push(map[key]);
 	}
 	return ret;
 }
 
+/**
+ * Returns the list of files in the given directory.
+ */
+function filesInDirectory(grunt, path) {
+	var ret = [],
+		files = fs.readdirSync(path);
+	
+	// for each file
+	for (var i=0; i<files.length; i++) {
+		var file = files[i],
+			stats = fs.statSync(path ? paths.join(path, file) : file),
+			isDir = stats.isDirectory();
+		
+		// skip ., .. and hidden files
+		if (file.charAt(0) == '.') continue;
+		
+		ret.push({
+			path: path ? path + '/' + file : file,
+			name: file,
+			isDir: isDir
+		});
+	}
+	
+	return ret;
+}
+
+/**
+ * Returns the headers that fits the best the output.
+ * Will also add headers to prevent caching.
+ */
 function headersForOutput(output, contentType) {
+	// was a content type given?
 	if (!contentType) {
 		// default content type
 		contentType = 'text/plain';
@@ -159,16 +265,29 @@ function headersForOutput(output, contentType) {
 			contentType = 'text/json';
 		} else if (output.match(/\.html$/i)) {
 			contentType = 'text/html';
+		} else if (output.match(/\.png$/i)) {
+			contentType = 'image/png';
+		} else if (output.match(/\.jpg$/i)) {
+			contentType = 'image/jpeg';
+		} else if (output.match(/\.ico$/i)) {
+			contentType = 'image/ico';
+		} else if (output.match(/\.jpeg$/i)) {
+			contentType = 'image/jpeg';
 		}
 	}
-	return {'Content-Type': contentType};
+	
+	return {
+		'Content-Type': contentType,
+		'Cache-Control': 'no-cache, no-store, must-revalidate',
+		'Pragma': 'no-cache',
+		'Expires': '0'
+	};
 }
 
-function writeError(response, error) {
-    response.writeHead(200, {"Content-Type": "text/html"});
-	response.end('<html><body><pre>'+error+'</pre></body></html>');
-}
-
+/**
+ * Converts Grunt's stdout into html.
+ * (keeping the colors the same)
+ */
 function formatStdout(stdout) {
 	var regex = /\x1B\[(\d+)m/g,
 		opened = false,
@@ -184,6 +303,8 @@ function formatStdout(stdout) {
 			'37': '#999999'
 		},
 		match;
+	
+	// replace all colors markers by html
 	while ((match = regex.exec(stdout))) {
 		var code = match[1]+'',
 			start = stdout.substr(0, match.index),
@@ -200,5 +321,7 @@ function formatStdout(stdout) {
 		
 		opened = true;
 	}
-	return stdout.replace(/\n+/, '\n');
+	
+	// replace all line return by the html equivalent
+	return stdout.replace(/\n+/g, '<br />');
 }

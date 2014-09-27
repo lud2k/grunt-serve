@@ -1,7 +1,7 @@
 {
   "name": "grunt-serve",
-  "description": "Starts a http server that can be called to run tasks",
-  "version": "0.1.4",
+  "description": "Starts a http server that can be called to run tasks and serve files",
+  "version": "0.1.5",
   "homepage": "https://github.com/lud2k/grunt-serve",
   "author": {
     "name": "Ludovic Cabre",
@@ -39,10 +39,11 @@
     "gruntplugin", "serve", "http", "build"
   ],
   "dependencies": {
-    "connect": "~2.13.0"
+    "connect": "~2.13.0",
+    "dot": "~1.0.2"
   },
   "readmeFilename": "README.md",
-  "_id": "grunt-serve@0.1.4",
-  "_from": "grunt-serve@~0.1.4",
-  "_resolved": "https://registry.npmjs.org/grunt-serve/-/grunt-serve-0.1.4.tgz"
+  "_id": "grunt-serve@0.1.5",
+  "_from": "grunt-serve@~0.1.5",
+  "_resolved": "https://registry.npmjs.org/grunt-serve/-/grunt-serve-0.1.5.tgz"
 }
