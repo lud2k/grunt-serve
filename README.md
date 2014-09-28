@@ -33,6 +33,8 @@ Here is a summary of how the server will behave:
  * Calls to /task/{task1},{task2}/{output} will run the given tasks and return the file named output (see example later).
  * Calls to /{alias} ({alias} being an alias that you have configured) will run the tasks defined for that alias.
  * Calls did not match the rules above will try to return the content of a file for the given path (/index.html will return the file index.html located in the folder where grunt was launched).
+ 
+This project can also be found on `https://www.npmjs.org/package/grunt-serve`.
 
 #### Rebuild on browser refresh
 
@@ -81,14 +83,16 @@ Default value: `null`
 Aliases allows you to configure what tasks should be ran and what file should
 be returned for a specific path. In the following example, calling http://localhost:9000/client.js
 will trigger running the tasks 'html2js', 'concat' and 'minify'. When all the tasks have been executed
-the file client.min.js will be returned.
-
+the file client.min.js will be returned and the content type 'text/javascript' will be set in the 
+headers. If no contentType if given, it will try to auto detect by looking at the output. If no output
+if given, the grunt stdout will be returned.
 
 ```javascript
 	'aliases': {
 		'client.js': {
-			tasks: ['html2js', 'concat', 'minify'],
-			output: 'client.min.js'
+			tasks: ['html2js', 'concat', 'minify'], // required
+			output: 'client.min.js', // optional
+			contentType: 'text/javascript' // optional
 		},
 		...
 	}
@@ -99,6 +103,21 @@ Type: `Boolean`
 Default value: `false`
 
 Controls whether or not to print the build logs in the terminal.
+
+#### options.serve
+Type: `Object`  
+Default value: `null`
+
+Configuration of serve. The only thing configurable right now is the base path to serve. By default, if no path is specified,
+it will automatically serve the files in the grunt working directory. If you want another path to be served, you can either
+put a relative or absolute path as shown below. This will only affect the serve feature (aliases or /task output path will
+always be related to the grunt working directory). 
+
+```javascript
+	'serve': {
+		'path': '/Users/user/Documents/workspace/project'
+	}
+```
 
 ### Usage Examples
 
@@ -189,3 +208,4 @@ grunt.initConfig({
  * 2014-03-24   0.1.3    Improved URL parsing
  * 2014-09-16   0.1.4    Fixed unresponsive server issue
  * 2014-09-27   0.1.5    Added serves files and nicer pages
+ * 2014-09-27   0.1.6    Bug fix and code refactoring.

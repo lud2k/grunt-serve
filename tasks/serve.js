@@ -14,7 +14,8 @@ var connect = require('connect'),
 	childProcess = require("child_process"),
 	fs = require('fs'),
 	dot = require('dot'),
-	paths = require('path');
+	paths = require('path'),
+	contentTypes = require('../data/content_types.js');
 
 // load all template files
 var loadTemplate = function(name) {
@@ -24,7 +25,7 @@ var loadTemplate = function(name) {
 	notFoundTmpl = loadTemplate('not_found.html'),
 	directoryTmpl = loadTemplate('directory.html'),
 	errorTmpl = loadTemplate('error.html'),
-	successTmpl = loadTemplate('error.html'),
+	successTmpl = loadTemplate('success.html'),
 	gruntErrorTmpl = loadTemplate('grunt_error.html'),
 	missingTmpl = loadTemplate('missing.html');
 
@@ -40,7 +41,10 @@ module.exports = function(grunt) {
 		// get options
 		var options = this.options({
 			port: 9000,
-			silently: false
+			silently: false,
+			serve: {
+				path: process.cwd()
+			}
 		});
 		
 		// start an HTTP server
@@ -51,7 +55,7 @@ module.exports = function(grunt) {
 			} catch(e) {
 				// show error
 			    render(response, 500, errorTmpl, {
-			    	error: 'Unexpected JavaScript exception "'+e+'"<br />'+e.stack.replace(/\n+/g, '<br />')
+			    	error: 'Unexpected JavaScript exception "'+e+'"<br />'+(e && e.stack ? e.stack.replace(/\n+/g, '<br />') : '')
 			    });
 			}
 		}).listen(options.port);
@@ -74,15 +78,15 @@ module.exports = function(grunt) {
  */
 function handleRequest(request, response, grunt, options) {
 	// get url from request
-	var url = request.url,
-		path = /[^?#]+/.exec(url)[0];
+	var url = require('url').parse(request.url),
+		path = unescape(url.pathname);
 	
 	// main page request?
 	if (path == '/') {
 		render(response, 200, indexTmpl, {
 	    	host: request.headers.host,
 	    	aliases: mapToArray(options.aliases, 'name'),
-	    	files: filesInDirectory(grunt, '.')
+	    	files: filesInDirectory(grunt, options, '.')
 	    });
 		return;
 	}
@@ -90,7 +94,7 @@ function handleRequest(request, response, grunt, options) {
 	// is this url for /task/?
 	if (path.substr(0, 6) == '/task/') {
 		// get parameters
-		var match = /\/task\/([^\/]+)(\/(.+))?/.exec(url);
+		var match = /\/task\/([^\/]+)(\/(.+))?/.exec(path);
 		if (match) {
 			var tasks = match[1].split(','),
 				output = match[3];
@@ -110,19 +114,21 @@ function handleRequest(request, response, grunt, options) {
 			output = aliases[aliasName].output,
 			contentType = aliases[aliasName].contentType;
 		
+		if (!tasks) throw "No tasks were defined for alias: "+aliasName;
+		
 		// run tasks
 		executeTasks(request, response, grunt, options, tasks, output, contentType);
 		return;
 	}
 	
 	// is this path a file?
-	var file = path.substr(1);
+	var file = paths.join(options.serve.path, path.substr(1));
     if (grunt.file.exists(file)) {
     	var stats = fs.statSync(file);
     	if (stats.isDirectory()) {
     		// show directory content
     		render(response, 200, directoryTmpl, {
-    	    	files: filesInDirectory(grunt, file)
+    	    	files: filesInDirectory(grunt, options, path.substr(1))
     	    });
     		
     	} else {
@@ -184,7 +190,7 @@ function executeTasks(request, response, grunt, options, tasks, output, contentT
 		} catch(e) {
 			// show error
 		    render(response, 500, errorTmpl, {
-		    	error: 'Unexpected JavaScript exception "'+e+'"<br />'+e.stack.replace(/\n+/g, '<br />')
+		    	error: 'Unexpected JavaScript exception "'+e+'"<br />'+(e && e.stack ? e.stack.replace(/\n+/g, '<br />') : '')
 		    });
 		}
 	});
@@ -194,16 +200,22 @@ function executeTasks(request, response, grunt, options, tasks, output, contentT
  * Renders an html page and ends the request.
  */
 function render(response, code, template, data) {
-    response.writeHead(code, {"Content-Type": "text/html"});
-    response.end(template(data));
+	var html = template(data);
+	if (!response.headersSent) {
+	    response.writeHead(code, {"Content-Type": "text/html"});
+	}
+    response.end(html);
 }
 
 /**
  * Writes a file's content to the output and ends the request.
  */
 function write(response, code, grunt, file, contentType) {
-    response.writeHead(200, headersForOutput(file, contentType));
-	response.end(grunt.file.read(file));
+	var data = fs.readFileSync(file);
+	if (!response.headersSent) {
+	    response.writeHead(200, headersForOutput(file, contentType));
+	}
+	response.end(data);
 }
 
 /**
@@ -221,14 +233,15 @@ function mapToArray(map, name) {
 /**
  * Returns the list of files in the given directory.
  */
-function filesInDirectory(grunt, path) {
+function filesInDirectory(grunt, options, path) {
 	var ret = [],
-		files = fs.readdirSync(path);
+		fullPath = paths.join(options.serve.path, path),
+		files = fs.readdirSync(fullPath);
 	
 	// for each file
 	for (var i=0; i<files.length; i++) {
 		var file = files[i],
-			stats = fs.statSync(path ? paths.join(path, file) : file),
+			stats = fs.statSync(paths.join(fullPath, file)),
 			isDir = stats.isDirectory();
 		
 		// skip ., .. and hidden files
@@ -248,40 +261,23 @@ function filesInDirectory(grunt, path) {
  * Returns the headers that fits the best the output.
  * Will also add headers to prevent caching.
  */
-function headersForOutput(output, contentType) {
-	// was a content type given?
-	if (!contentType) {
-		// default content type
-		contentType = 'text/plain';
-		
-		// check output extension
-		if (output.match(/\.js$/i)) {
-			contentType = 'text/javascript';
-		} else if (output.match(/\.css$/i)) {
-			contentType = 'text/css';
-		} else if (output.match(/\.xml$/i)) {
-			contentType = 'text/xml';
-		} else if (output.match(/\.json$/i)) {
-			contentType = 'text/json';
-		} else if (output.match(/\.html$/i)) {
-			contentType = 'text/html';
-		} else if (output.match(/\.png$/i)) {
-			contentType = 'image/png';
-		} else if (output.match(/\.jpg$/i)) {
-			contentType = 'image/jpeg';
-		} else if (output.match(/\.ico$/i)) {
-			contentType = 'image/ico';
-		} else if (output.match(/\.jpeg$/i)) {
-			contentType = 'image/jpeg';
-		}
-	}
-	
-	return {
-		'Content-Type': contentType,
+function headersForOutput(path, contentType) {
+	// disable caching
+	var ret = {
 		'Cache-Control': 'no-cache, no-store, must-revalidate',
 		'Pragma': 'no-cache',
 		'Expires': '0'
-	};
+	}
+	
+	// try to auto detect the content type
+	if (!contentType) {
+		contentType = contentTypes(path);
+		if (contentType) {
+			ret['Content-Type'] = contentType;
+		}
+	}
+	
+	return ret;
 }
 
 /**

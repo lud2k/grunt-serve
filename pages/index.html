@@ -22,7 +22,7 @@
 			<u>Configured aliases:</u><br />
 			{{? it.aliases.length}}
 				{{~it.aliases :val:idx}}
-					- <a href="/{{=val.name}}">{{=val.name}}</a> [{{? val.tasks.length}} {{=val.tasks}} {{??}} no tasks {{?}}] => {{=val.output || 'no output'}}<br />
+					- <a href="/{{=val.name}}">{{=val.name}}</a> [{{? val.tasks && val.tasks.length}} {{=val.tasks}} {{??}} no tasks {{?}}] => {{=val.output || 'no output'}}<br />
 				{{~}}
 			{{??}}
 				(no configure aliases)
