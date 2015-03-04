@@ -25,7 +25,7 @@ grunt.loadNpmTasks('grunt-serve');
 
 This task allows you to create a http server that can be called to run Grunt tasks and serve files.
 
-Once the task is ran, The HTTP server can be accessed by loading the page `http://localhost:9000/`.
+Once the task is run, The HTTP server can be accessed by loading the page `http://localhost:9000/`.
 This will show you your configured aliases as well as the files that can be access using this server.
 
 Here is a summary of how the server will behave:
@@ -80,7 +80,7 @@ The port that the server should be running on.
 Type: `Object`  
 Default value: `null`
 
-Aliases allows you to configure what tasks should be ran and what file should
+Aliases allows you to configure what tasks should be run and what file should
 be returned for a specific path. In the following example, calling http://localhost:9000/client.js
 will trigger running the tasks 'html2js', 'concat' and 'minify'. When all the tasks have been executed
 the file client.min.js will be returned and the content type 'text/javascript' will be set in the 
