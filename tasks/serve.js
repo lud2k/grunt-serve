@@ -145,7 +145,7 @@ function handleRequest(request, response, grunt, options) {
  */
 function executeTasks(request, response, grunt, options, tasks, output, contentType) {
 	// execute tasks
-	childProcess.exec('grunt '+tasks.join(' '), function(error, stdout, stderr) {
+	childProcess.exec('grunt '+tasks.join(' ')+' '+grunt.option.flags().join(' '), function(error, stdout, stderr) {
 		try {
 			// should we print the stdout?
 			if (!options.silently) {
