@@ -176,12 +176,11 @@ function executeTasks(request, response, grunt, options, tasks, output, contentT
 		    	});
 			    
 		    } else {
-		        output = paths.join(
-		            process.cwd(),
-		            options.serve.path,
-		            url.parse(request.url).path,
-		            output
-		        );
+				output = paths.resolve(
+					options.serve.path,
+					url.parse(request.url).pathname.replace(/^\//, ''),
+					output
+				);
 
 		    	// requested output file exists?
 				if (grunt.file.exists(output)) {
