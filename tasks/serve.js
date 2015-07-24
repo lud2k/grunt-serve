@@ -105,6 +105,13 @@ function handleRequest(request, response, grunt, options) {
 		}
 	}
 	
+	// is this url contains virtual root? If so, remove it
+	if (options.virtualRoot) {
+		if (path.indexOf(options.virtualRoot) === 0) {
+			path = path.substr(options.virtualRoot.length);
+		}
+	}
+
 	// does this path match an alias?
 	var aliasName = path.substr(1);
 	var aliases = options.aliases;
