@@ -1,6 +1,6 @@
 # grunt-serve
 
-> Starts a http server that can be called to run Grunt tasks and serve files.
+> Starts a http server that can be called to run Grunt tasks and serve files with JsonWebToken.
 
 ## Getting Started
 This plugin requires Grunt `~0.4.0`
