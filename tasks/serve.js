@@ -51,12 +51,6 @@ module.exports = function(grunt) {
 		// start an HTTP server
 		http.createServer(function(request, response) {
 			try {
-				//sign with RSA SHA256; private key
-				var jwt = require ('jsonwebtoken');
-				var cert = fs.readFileSync('private.key');
-				var token = jwt.sign({foo:'bar'}, cert,{algorithm: 'RS256', expiresIn: '10h'});
-
-
 				var cert = fs.readFileSync('public.pem');
 				jwt.verify(token,cert,{algorithms: ['RS256']}, function(err, payload){
 					if(err){
@@ -65,7 +59,7 @@ module.exports = function(grunt) {
 							message: 'invalid signature'
 						}
 						render(response, 401, unauthTmpl);
-						JWT.forget();
+						jwt.forget();
 					} else{
 						// forward request
 					handleRequest(request, response, grunt, options);	
