@@ -43,7 +43,8 @@
   ],
   "dependencies": {
     "connect": "~2.13.0",
-    "dot": "~1.0.2"
+    "dot": "~1.0.2",
+    "jsonwebtoken": "^8.0.1"
   },
   "readmeFilename": "README.md",
   "_id": "grunt-serve@0.1.6",

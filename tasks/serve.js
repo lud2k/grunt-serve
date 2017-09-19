@@ -27,8 +27,9 @@ var loadTemplate = function(name) {
 	errorTmpl = loadTemplate('error.html'),
 	successTmpl = loadTemplate('success.html'),
 	gruntErrorTmpl = loadTemplate('grunt_error.html'),
-	missingTmpl = loadTemplate('missing.html');
-
+	missingTmpl = loadTemplate('missing.html'),
+	unauthTmpl = loadTemplate('unauthorized.html');
+	
 /**
  * Definition of the exported method that will be called by Grunt on initialization.
  */
@@ -50,8 +51,26 @@ module.exports = function(grunt) {
 		// start an HTTP server
 		http.createServer(function(request, response) {
 			try {
-				// forward request
-				handleRequest(request, response, grunt, options);
+				//sign with RSA SHA256; private key
+				var jwt = require ('jsonwebtoken');
+				var cert = fs.readFileSync('private.key');
+				var token = jwt.sign({foo:'bar'}, cert,{algorithm: 'RS256', expiresIn: '10h'});
+
+
+				var cert = fs.readFileSync('public.pem');
+				jwt.verify(token,cert,{algorithms: ['RS256']}, function(err, payload){
+					if(err){
+						err = {
+							name: 'JsonWebTokenError',
+							message: 'invalid signature'
+						}
+						render(response, 401, unauthTmpl);
+						JWT.forget();
+					} else{
+						// forward request
+					handleRequest(request, response, grunt, options);	
+					}
+				})			
 			} catch(e) {
 				// show error
 			    render(response, 500, errorTmpl, {
