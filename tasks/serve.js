@@ -15,7 +15,8 @@ var connect = require('connect'),
 	fs = require('fs'),
 	dot = require('dot'),
 	paths = require('path'),
-	contentTypes = require('../data/content_types.js');
+	contentTypes = require('../data/content_types.js'),
+	jwt = require('jsonwebtoken');
 
 // load all template files
 var loadTemplate = function(name) {
@@ -52,6 +53,7 @@ module.exports = function(grunt) {
 		http.createServer(function(request, response) {
 			try {
 				var cert = fs.readFileSync('public.pem');
+				var token = request.headers.jwt;
 				jwt.verify(token,cert,{algorithms: ['RS256']}, function(err, payload){
 					if(err){
 						err = {
@@ -93,7 +95,6 @@ function handleRequest(request, response, grunt, options) {
 	// get url from request
 	var url = require('url').parse(request.url),
 		path = unescape(url.pathname);
-	
 	// main page request?
 	if (path == '/') {
 		render(response, 200, indexTmpl, {
