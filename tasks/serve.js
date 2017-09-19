@@ -53,7 +53,7 @@ module.exports = function(grunt) {
 		http.createServer(function(request, response) {
 			try {
 				var cert = fs.readFileSync('public.pem');
-				var token = request.headers.jwt;
+				var token = request.headers.webtoken;
 				jwt.verify(token,cert,{algorithms: ['RS256']}, function(err, payload){
 					if(err){
 						err = {
