@@ -209,3 +209,12 @@ grunt.initConfig({
  * 2014-09-16   0.1.4    Fixed unresponsive server issue
  * 2014-09-27   0.1.5    Added serves files and nicer pages
  * 2014-09-27   0.1.6    Bug fix and code refactoring.
+
+
+# generate Token
+set RANDFILE=<projectpath>\.rnd
+set OPENSSL_CONF=C:\OpenSSL-Win32\bin\openssl.cfg
+
+c:\OpenSSL-Win32\bin\openssl.exe
+genrsa -out private.key 2048
+rsa -in private.key -outform PEM -pubout -out public.pem
