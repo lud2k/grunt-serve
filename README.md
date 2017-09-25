@@ -212,9 +212,11 @@ grunt.initConfig({
 
 
 # generate Token
+```bash
 set RANDFILE=<projectpath>\.rnd
 set OPENSSL_CONF=C:\OpenSSL-Win32\bin\openssl.cfg
 
 c:\OpenSSL-Win32\bin\openssl.exe
 genrsa -out private.key 2048
 rsa -in private.key -outform PEM -pubout -out public.pem
+```
