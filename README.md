@@ -211,7 +211,7 @@ grunt.initConfig({
  * 2014-09-27   0.1.6    Bug fix and code refactoring.
 
 
-# generate Token
+# generate Key
 ```bash
 set RANDFILE=<projectpath>\.rnd
 set OPENSSL_CONF=C:\OpenSSL-Win32\bin\openssl.cfg
@@ -219,4 +219,12 @@ set OPENSSL_CONF=C:\OpenSSL-Win32\bin\openssl.cfg
 c:\OpenSSL-Win32\bin\openssl.exe
 genrsa -out private.key 2048
 rsa -in private.key -outform PEM -pubout -out public.pem
+```
+# generate Token
+```javascript
+var jwt = require ('jsonwebtoken');
+var fs = require("fs");
+var cert = fs.readFileSync('private.key');
+var token = jwt.sign({foo:'bar'}, cert,{algorithm: 'RS256', expiresIn: '10h'});
+console.log(token);
 ```
