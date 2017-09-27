@@ -10,8 +10,8 @@
 			<br />
 			Runs the tasks named "[[task1]]" and "{#task2#}"<br />
 			=> <a href="http://{{=it.host}}/task/task1,task2,...">http://{{=it.host}}/task/{#task1#},{#task2#},...</a><br />
-			<br /> Runs the task named "{#task1#}" and returns the file named "{#file#}"<br />
-			=> <a href="http://{{=it.host}}/task/task1/file">http://{{=it.host}}/task/{#task1#}/{#file#}</a>
+			<!--br /> Runs the task named "{#task1#}" and returns the file named "{#file#}"<br />
+			=> <a href="http://{{=it.host}}/task/task1/file">http://{{=it.host}}/task/{#task1#}/{#file#}</a-->
 		</p>
 		<br />
 		<p>
@@ -29,7 +29,7 @@
 			{{?}}
 		</p>
 		<br />
-		<p>
+		<!--p>
 			<b style="font-size: 14px;">Files</b><br />
 			<i>This server will also serve any static files if no alias is matched.</i><br />
 			<br />
@@ -41,6 +41,6 @@
 			{{??}}
 				(no files found)
 			{{?}}
-		</p>
+		</p-->
 	</body>
 </html>
