@@ -213,8 +213,24 @@ function executeTasks(request, response, grunt, options, tasks, output, contentT
 }
 
 /**
- * Renders an html page and ends the request.
+ * Renders a json response.
  */
+function render(response, code, template, data) {
+	var json = JSON.stringify({
+		anString : "Test123",
+		anotherString: "test567"
+	})
+	if (!response.headersSent) {
+		response.writeHead(code, {"Content-Type": "application/json"});
+	}
+    response.end(json);
+}
+
+/**
+ * Renders a html page and ends the request.
+ */
+
+/*
 function render(response, code, template, data) {
 	var html = template(data);
 	if (!response.headersSent) {
@@ -222,6 +238,8 @@ function render(response, code, template, data) {
 	}
     response.end(html);
 }
+*/
+
 
 /**
  * Writes a file's content to the output and ends the request.
