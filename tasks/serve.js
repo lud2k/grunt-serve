@@ -8,7 +8,8 @@
 
 'use strict';
 
-var	fs = require('fs'),
+var	childProcess = require("child_process"),
+	fs = require('fs'),
 	dot = require('dot'),
 	paths = require('path'),
 	contentTypes = require('../data/content_types.js'),
@@ -87,12 +88,17 @@ module.exports = function(grunt) {
 						}
 						render(res, 401, unauthTmpl);
 					} else{
-						// forward request
-						render(res, 200, indexTmpl, {
-							host: req.headers.host,
-							aliases: mapToArray(options.aliases, 'name'),
-							files: filesInDirectory(grunt, options, '.')
-						});
+						var url = require('url').parse(req.url),
+							path = unescape(url.pathname);
+						var match = /\/task\/([^\/]+)(\/(.+))?/.exec(path);
+						if (match) {
+							var tasks = match[1].split(','),
+								output = match[3];
+							
+							// run tasks
+							executeTasks(req, res, grunt, options, tasks, output, null);
+							return;
+						}
 					}
 				});
 			} catch(e) {
@@ -124,32 +130,6 @@ module.exports = function(grunt) {
 
 /* 
 function handleRequest(request, response, grunt, options) {
-	// get url from request
-	var url = require('url').parse(request.url),
-		path = unescape(url.pathname);
-	// main page request?
-	if (path == '/') {
-		render(response, 200, indexTmpl, {
-	    	host: request.headers.host,
-	    	aliases: mapToArray(options.aliases, 'name'),
-	    	files: filesInDirectory(grunt, options, '.')
-	    });
-		return;
-	}
-
-	// is this url for /task/?
-	if (path.substr(0, 6) == '/task/') {
-		// get parameters
-		var match = /\/task\/([^\/]+)(\/(.+))?/.exec(path);
-		if (match) {
-			var tasks = match[1].split(','),
-				output = match[3];
-			
-			// run tasks
-			executeTasks(request, response, grunt, options, tasks, output, null);
-			return;
-		}
-	}
 	
 	// is this url contains virtual root? If so, remove it
 	if (options.virtualRoot) {
@@ -173,24 +153,6 @@ function handleRequest(request, response, grunt, options) {
 		executeTasks(request, response, grunt, options, tasks, output, contentType);
 		return;
 	}
-	
-	// is this path a file?
-	var file = paths.join(options.serve.path, path.substr(1));
-    if (grunt.file.exists(file)) {
-    	var stats = fs.statSync(file);
-    	if (stats.isDirectory()) {
-    		// show directory content
-    		render(response, 200, directoryTmpl, {
-    	    	files: filesInDirectory(grunt, options, path.substr(1))
-    	    });
-    		
-    	} else {
-    		// return file
-    		write(response, 200, grunt, file);
-    	}
-    } else {
-    	render(response, 404, notFoundTmpl);
-    }
 }
 */
 

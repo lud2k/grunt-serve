@@ -44,6 +44,7 @@
   "dependencies": {
     "connect": "~2.13.0",
     "dot": "~1.0.2",
+    "express": "^4.15.5",
     "jsonwebtoken": "^8.0.1"
   },
   "readmeFilename": "README.md",
