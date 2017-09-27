@@ -8,15 +8,14 @@
 
 'use strict';
 
-// requires
-var connect = require('connect'),
-	http = require('http'),
-	childProcess = require("child_process"),
-	fs = require('fs'),
+var	fs = require('fs'),
 	dot = require('dot'),
 	paths = require('path'),
 	contentTypes = require('../data/content_types.js'),
-	jwt = require('jsonwebtoken');
+	jwt = require('jsonwebtoken'),
+	express = require('express'),
+	app = express();
+// requires
 
 // load all template files
 var loadTemplate = function(name) {
@@ -49,31 +48,62 @@ module.exports = function(grunt) {
 			}
 		});
 		
-		// start an HTTP server
-		http.createServer(function(request, response) {
-			try {
+		app.get ('/', function(req, res) {
+			try{
 				var cert = fs.readFileSync('public.pem');
-				var token = request.headers.webtoken;
+				var token = req.headers.webtoken;
 				jwt.verify(token,cert,{algorithms: ['RS256']}, function(err, payload){
 					if(err){
 						err = {
 							name: 'JsonWebTokenError',
 							message: 'invalid signature'
 						}
-						render(response, 401, unauthTmpl);
-						jwt.forget();
+						render(res, 401, unauthTmpl);
 					} else{
 						// forward request
-					handleRequest(request, response, grunt, options);	
+						render(res, 200, indexTmpl, {
+							host: req.headers.host,
+							aliases: mapToArray(options.aliases, 'name'),
+							files: filesInDirectory(grunt, options, '.')
+						});
 					}
-				})			
+				});
+			} catch (e) {
+				render(res, 500, errorTmpl, {
+					error: 'Unexpected JavaScript exception "'+e+'"<br />'+(e && e.stack ? e.stack.replace(/\n+/g, '<br />') : '')
+				});
+			}
+		});
+
+		app.get ('/task/*', function(req, res) {
+			try {
+				var cert = fs.readFileSync('public.pem');
+				var token = req.headers.webtoken;
+				jwt.verify(token,cert,{algorithms: ['RS256']}, function(err, payload){
+					if(err){
+						err = {
+							name: 'JsonWebTokenError',
+							message: 'invalid signature'
+						}
+						render(res, 401, unauthTmpl);
+					} else{
+						// forward request
+						render(res, 200, indexTmpl, {
+							host: req.headers.host,
+							aliases: mapToArray(options.aliases, 'name'),
+							files: filesInDirectory(grunt, options, '.')
+						});
+					}
+				});
 			} catch(e) {
 				// show error
-			    render(response, 500, errorTmpl, {
-			    	error: 'Unexpected JavaScript exception "'+e+'"<br />'+(e && e.stack ? e.stack.replace(/\n+/g, '<br />') : '')
-			    });
+				render(res, 500, errorTmpl, {
+					error: 'Unexpected JavaScript exception "'+e+'"<br />'+(e && e.stack ? e.stack.replace(/\n+/g, '<br />') : '')
+				});
 			}
-		}).listen(options.port);
+		});
+
+		app.listen(options.port);
 
 		// handle SIGINT signal properly
 		process.on('SIGINT', function() {
@@ -91,6 +121,8 @@ module.exports = function(grunt) {
  * Handles all requests to the server.
  * Each call with trigger a call to the following function.
  */
+
+/* 
 function handleRequest(request, response, grunt, options) {
 	// get url from request
 	var url = require('url').parse(request.url),
@@ -160,6 +192,7 @@ function handleRequest(request, response, grunt, options) {
     	render(response, 404, notFoundTmpl);
     }
 }
+*/
 
 /**
  * Runs Grunt to execute the given tasks.
