@@ -15,7 +15,10 @@ var	childProcess = require("child_process"),
 	contentTypes = require('../data/content_types.js'),
 	jwt = require('jsonwebtoken'),
 	express = require('express'),
-	app = express();
+	app = express()
+	server;
+
+exports.app = app = express.createServer();
 // requires
 
 // load all template files
@@ -109,7 +112,7 @@ module.exports = function(grunt) {
 			}
 		});
 
-		app.listen(options.port);
+		server = app.listen(options.port);
 
 		// handle SIGINT signal properly
 		process.on('SIGINT', function() {
