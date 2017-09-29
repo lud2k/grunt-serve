@@ -65,7 +65,7 @@ module.exports = function(grunt) {
 						render(res, 200, indexTmpl, {
 							host: req.headers.host,
 							aliases: mapToArray(options.aliases, 'name'),
-							files: filesInDirectory(grunt, options, '.')
+							files: filesInDirectory(grunt, options, '.'),
 						});
 					}
 				});
@@ -217,8 +217,8 @@ function executeTasks(request, response, grunt, options, tasks, output, contentT
  */
 function render(response, code, template, data) {
 	var json = JSON.stringify({
-		anString : "Test123",
-		anotherString: "test567"
+		templ : template,
+		text: "test123"
 	})
 	if (!response.headersSent) {
 		response.writeHead(code, {"Content-Type": "application/json"});
