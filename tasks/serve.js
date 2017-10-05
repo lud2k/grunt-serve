@@ -15,10 +15,8 @@ var	childProcess = require("child_process"),
 	contentTypes = require('../data/content_types.js'),
 	jwt = require('jsonwebtoken'),
 	express = require('express'),
-	app = express()
+	app = express(),
 	server;
-
-exports.app = app = express.createServer();
 // requires
 
 // load all template files
@@ -220,6 +218,7 @@ function executeTasks(request, response, grunt, options, tasks, output, contentT
  */
 function render(response, code, template, data) {
 	var json = JSON.stringify({
+		statusCode : code,
 		templ : template,
 		text: "test123"
 	})
@@ -233,6 +232,7 @@ function render(response, code, template, data) {
  * Renders a html page and ends the request.
  */
 
+
 /*
 function render(response, code, template, data) {
 	var html = template(data);
@@ -240,7 +240,7 @@ function render(response, code, template, data) {
 	    response.writeHead(code, {"Content-Type": "text/html"});
 	}
     response.end(html);
-}
+} 
 */
 
 
