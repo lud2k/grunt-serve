@@ -31,7 +31,8 @@
     "grunt-contrib-nodeunit": "~0.1.2",
     "grunt-conventional-changelog": "~1.0.0",
     "jasmine": "^2.8.0",
-    "load-grunt-tasks": "~0.2.0"
+    "load-grunt-tasks": "~0.2.0",
+    "node-fetch": "^1.7.3"
   },
   "peerDependencies": {
     "grunt": ">=0.4.0"
@@ -46,6 +47,7 @@
     "connect": "~2.13.0",
     "dot": "~1.0.2",
     "express": "^4.15.5",
+    "http-client": "^4.3.1",
     "jsonwebtoken": "^8.0.1"
   },
   "scripts": {
