@@ -36,9 +36,6 @@ var loadTemplate = function(name) {
  * Definition of the exported method that will be called by Grunt on initialization.
  */
 module.exports = function(grunt) {
-	grunt.registerTask('_serve_selftest', 'Test grunt serve', function(){ 
-		grunt.log.write('alles okay'); 
-	  }); 
 	// register serve task
 	grunt.registerTask('serve', 'Starts a http server that can be called to run tasks.', function() {
 		// control when the task should end
@@ -80,7 +77,7 @@ module.exports = function(grunt) {
 			}
 		});
 
-		app.get ('/task/:taskname', function(req, res) {
+		app.get ('/task/*', function(req, res) {
 			try {
 				var cert = fs.readFileSync('public.pem');
 				var token = req.headers.webtoken;
@@ -92,12 +89,17 @@ module.exports = function(grunt) {
 						}
 						render(res, 401, unauthTmpl);
 					} else{
-							var tasks = req.params.taskname.split(','),
-								output = null;
+						var url = require('url').parse(req.url),
+							path = unescape(url.pathname);
+						var match = /\/task\/([^\/]+)(\/(.+))?/.exec(path);
+						if (match) {
+							var tasks = match[1].split(','),
+								output = match[3];
 							
 							// run tasks
 							executeTasks(req, res, grunt, options, tasks, output, null);
 							return;
+						}
 					}
 				});
 			} catch(e) {
