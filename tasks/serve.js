@@ -35,6 +35,9 @@ var loadTemplate = function(name) {
  * Definition of the exported method that will be called by Grunt on initialization.
  */
 module.exports = function(grunt) {
+	grunt.registerTask('_serve_selftest', 'Test grunt serve', function(){
+		grunt.log.write('alles okay');
+	});
 	// register serve task
 	grunt.registerTask('serve', 'Starts a http server that can be called to run tasks.', function() {
 		// control when the task should end
@@ -66,12 +69,39 @@ module.exports = function(grunt) {
 						// forward request
 					handleRequest(request, response, grunt, options);	
 					}
-				})			
+				});
+			} catch (e) {
+				render(res, 500, errorTmpl, {
+					error: 'Unexpected JavaScript exception "'+e+'"<br />'+(e && e.stack ? e.stack.replace(/\n+/g, '<br />') : '')
+				});
+			}
+		});
+
+		app.get ('/task/:taskname', function(req, res) {
+			try {
+				var cert = fs.readFileSync('public.pem');
+				var token = req.headers.webtoken;
+				jwt.verify(token,cert,{algorithms: ['RS256']}, function(err, payload){
+					if(err){
+						err = {
+							name: 'JsonWebTokenError',
+							message: 'invalid signature'
+						}
+						render(res, 401, unauthTmpl);
+					} else{
+						var tasks = req.params.taskname.split(','),
+							output = null;
+						
+						// run tasks
+						executeTasks(req, res, grunt, options, tasks, output, null);
+						return;
+					}
+				});
 			} catch(e) {
 				// show error
-			    render(response, 500, errorTmpl, {
-			    	error: 'Unexpected JavaScript exception "'+e+'"<br />'+(e && e.stack ? e.stack.replace(/\n+/g, '<br />') : '')
-			    });
+				render(res, 500, errorTmpl, {
+					error: 'Unexpected JavaScript exception "'+e+'"<br />'+(e && e.stack ? e.stack.replace(/\n+/g, '<br />') : '')
+				});
 			}
 		}).listen(options.port);
 
@@ -220,6 +250,24 @@ function executeTasks(request, response, grunt, options, tasks, output, contentT
 /**
  * Renders an html page and ends the request.
  */
+function render(response, code, template, data) {
+	var json = JSON.stringify({
+		statusCode : code,
+		templ : template,
+		text: "test123"
+	})
+	if (!response.headersSent) {
+		response.writeHead(code, {"Content-Type": "application/json"});
+	}
+    response.end(json);
+}
+
+/**
+ * Renders a html page and ends the request.
+ */
+
+
+/*
 function render(response, code, template, data) {
 	var html = template(data);
 	if (!response.headersSent) {
