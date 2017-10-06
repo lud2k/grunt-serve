@@ -8,15 +8,16 @@
 
 'use strict';
 
-// requires
-var connect = require('connect'),
-	http = require('http'),
-	childProcess = require("child_process"),
+var	childProcess = require("child_process"),
 	fs = require('fs'),
 	dot = require('dot'),
 	paths = require('path'),
 	contentTypes = require('../data/content_types.js'),
-	jwt = require('jsonwebtoken');
+	jwt = require('jsonwebtoken'),
+	express = require('express'),
+	app = express(),
+	server;
+// requires
 
 // load all template files
 var loadTemplate = function(name) {
@@ -35,9 +36,9 @@ var loadTemplate = function(name) {
  * Definition of the exported method that will be called by Grunt on initialization.
  */
 module.exports = function(grunt) {
-	grunt.registerTask('_serve_selftest', 'Test grunt serve', function(){
-		grunt.log.write('alles okay');
-	});
+	grunt.registerTask('_serve_selftest', 'Test grunt serve', function(){ 
+		grunt.log.write('alles okay'); 
+	  }); 
 	// register serve task
 	grunt.registerTask('serve', 'Starts a http server that can be called to run tasks.', function() {
 		// control when the task should end
@@ -52,22 +53,24 @@ module.exports = function(grunt) {
 			}
 		});
 		
-		// start an HTTP server
-		http.createServer(function(request, response) {
-			try {
+		app.get ('/', function(req, res) {
+			try{
 				var cert = fs.readFileSync('public.pem');
-				var token = request.headers.webtoken;
+				var token = req.headers.webtoken;
 				jwt.verify(token,cert,{algorithms: ['RS256']}, function(err, payload){
 					if(err){
 						err = {
 							name: 'JsonWebTokenError',
 							message: 'invalid signature'
 						}
-						render(response, 401, unauthTmpl);
-						jwt.forget();
+						render(res, 401, unauthTmpl);
 					} else{
 						// forward request
-					handleRequest(request, response, grunt, options);	
+						render(res, 200, indexTmpl, {
+							host: req.headers.host,
+							aliases: mapToArray(options.aliases, 'name'),
+							files: filesInDirectory(grunt, options, '.'),
+						});
 					}
 				});
 			} catch (e) {
@@ -89,12 +92,12 @@ module.exports = function(grunt) {
 						}
 						render(res, 401, unauthTmpl);
 					} else{
-						var tasks = req.params.taskname.split(','),
-							output = null;
-						
-						// run tasks
-						executeTasks(req, res, grunt, options, tasks, output, null);
-						return;
+							var tasks = req.params.taskname.split(','),
+								output = null;
+							
+							// run tasks
+							executeTasks(req, res, grunt, options, tasks, output, null);
+							return;
 					}
 				});
 			} catch(e) {
@@ -103,7 +106,9 @@ module.exports = function(grunt) {
 					error: 'Unexpected JavaScript exception "'+e+'"<br />'+(e && e.stack ? e.stack.replace(/\n+/g, '<br />') : '')
 				});
 			}
-		}).listen(options.port);
+		});
+
+		server = app.listen(options.port);
 
 		// handle SIGINT signal properly
 		process.on('SIGINT', function() {
@@ -121,33 +126,9 @@ module.exports = function(grunt) {
  * Handles all requests to the server.
  * Each call with trigger a call to the following function.
  */
-function handleRequest(request, response, grunt, options) {
-	// get url from request
-	var url = require('url').parse(request.url),
-		path = unescape(url.pathname);
-	// main page request?
-	if (path == '/') {
-		render(response, 200, indexTmpl, {
-	    	host: request.headers.host,
-	    	aliases: mapToArray(options.aliases, 'name'),
-	    	files: filesInDirectory(grunt, options, '.')
-	    });
-		return;
-	}
 
-	// is this url for /task/?
-	if (path.substr(0, 6) == '/task/') {
-		// get parameters
-		var match = /\/task\/([^\/]+)(\/(.+))?/.exec(path);
-		if (match) {
-			var tasks = match[1].split(','),
-				output = match[3];
-			
-			// run tasks
-			executeTasks(request, response, grunt, options, tasks, output, null);
-			return;
-		}
-	}
+/* 
+function handleRequest(request, response, grunt, options) {
 	
 	// is this url contains virtual root? If so, remove it
 	if (options.virtualRoot) {
@@ -155,7 +136,6 @@ function handleRequest(request, response, grunt, options) {
 			path = path.substr(options.virtualRoot.length);
 		}
 	}
-
 	// does this path match an alias?
 	var aliasName = path.substr(1);
 	var aliases = options.aliases;
@@ -171,25 +151,8 @@ function handleRequest(request, response, grunt, options) {
 		executeTasks(request, response, grunt, options, tasks, output, contentType);
 		return;
 	}
-	
-	// is this path a file?
-	var file = paths.join(options.serve.path, path.substr(1));
-    if (grunt.file.exists(file)) {
-    	var stats = fs.statSync(file);
-    	if (stats.isDirectory()) {
-    		// show directory content
-    		render(response, 200, directoryTmpl, {
-    	    	files: filesInDirectory(grunt, options, path.substr(1))
-    	    });
-    		
-    	} else {
-    		// return file
-    		write(response, 200, grunt, file);
-    	}
-    } else {
-    	render(response, 404, notFoundTmpl);
-    }
 }
+*/
 
 /**
  * Runs Grunt to execute the given tasks.
@@ -248,7 +211,7 @@ function executeTasks(request, response, grunt, options, tasks, output, contentT
 }
 
 /**
- * Renders an html page and ends the request.
+ * Renders a json response.
  */
 function render(response, code, template, data) {
 	var json = JSON.stringify({
@@ -274,7 +237,9 @@ function render(response, code, template, data) {
 	    response.writeHead(code, {"Content-Type": "text/html"});
 	}
     response.end(html);
-}
+} 
+*/
+
 
 /**
  * Writes a file's content to the output and ends the request.
