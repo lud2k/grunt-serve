@@ -37,7 +37,7 @@ var loadTemplate = function(name) {
  */
 module.exports = function(grunt) {
 	grunt.registerTask('_serve_selftest', 'Test grunt serve', function(){ 
-		grunt.log.write('alles okay'); 
+		grunt.log.write('task testing successful'); 
 	}); 
 	// register serve task
 	grunt.registerTask('serve', 'Starts a http server that can be called to run tasks.', function() {
