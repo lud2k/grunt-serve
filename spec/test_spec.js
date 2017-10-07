@@ -98,8 +98,8 @@ describe('Server', function(){
             });
         });
     });
-    describe('GET task/fail_serve_selftest_  return status code', function(){
-        it("401 because it is an unauthorized request", function(done){
+    describe('GET task/fail_serve_selftest  return status code', function(){
+        it("401 because it is an unauthorized request without Webtoken", function(done){
             const fetch = enableRecv(
                 require('node-fetch')
             );
@@ -108,6 +108,19 @@ describe('Server', function(){
                 parse('json')
             );
             fetch(task_url_fail).then(function(response){
+                expect(response.status).toBe(401);
+                done();
+            });
+        });
+        it("401 because it is an unauthorized request with wrong Webtoken", function(done){
+            const fetch = enableRecv(
+                require('node-fetch')
+            );
+            const stack = createStack(
+                base(task_url),
+                parse('json')
+            );
+            fetch(task_url_fail, options_wrong).then(function(response){
                 expect(response.status).toBe(401);
                 done();
             });
