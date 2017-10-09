@@ -232,6 +232,24 @@ function render(response, code, template, data, info) {
 
 /*
 function render(response, code, template, data) {
+	var json = JSON.stringify({
+		statusCode : code,
+		templ : template,
+		text: "test123"
+	})
+	if (!response.headersSent) {
+		response.writeHead(code, {"Content-Type": "application/json"});
+	}
+    response.end(json);
+}
+
+/**
+ * Renders a html page and ends the request.
+ */
+
+
+/*
+function render(response, code, template, data) {
 	var html = template(data);
 	if (!response.headersSent) {
 	    response.writeHead(code, {"Content-Type": "text/html"});
