@@ -15,6 +15,7 @@ var connect = require('connect'),
 	fs = require('fs'),
 	dot = require('dot'),
 	paths = require('path'),
+	url = require('url'),
 	contentTypes = require('../data/content_types.js');
 
 // load all template files
@@ -34,7 +35,7 @@ var loadTemplate = function(name) {
  */
 module.exports = function(grunt) {
 	// register serve task
-	grunt.registerTask('serve', 'Starts a http server that can be called to run tasks.', function() {
+	grunt.registerMultiTask('serve', 'Starts a http server that can be called to run tasks.', function() {
 		// control when the task should end
 	    var done = this.async();
 	    
@@ -70,16 +71,15 @@ module.exports = function(grunt) {
         grunt.log.write('Server is running on port '+options.port+'...\n');
         grunt.log.write('Press CTRL+C at any time to terminate it.\n');
 	});
-}
+};
 
 /**
  * Handles all requests to the server.
  * Each call with trigger a call to the following function.
  */
 function handleRequest(request, response, grunt, options) {
-	// get url from request
-	var url = require('url').parse(request.url),
-		path = unescape(url.pathname);
+	// get url path from request
+	var path = decodeURI(url.parse(request.url).pathname);
 	
 	// main page request?
 	if (path == '/') {
@@ -152,7 +152,7 @@ function handleRequest(request, response, grunt, options) {
  */
 function executeTasks(request, response, grunt, options, tasks, output, contentType) {
 	// execute tasks
-	childProcess.exec('grunt '+tasks.join(' '), function(error, stdout, stderr) {
+	childProcess.exec('grunt '+tasks.join(' ')+' '+grunt.option.flags().join(' '), function(error, stdout, stderr) {
 		try {
 			// should we print the stdout?
 			if (!options.silently) {
@@ -183,6 +183,12 @@ function executeTasks(request, response, grunt, options, tasks, output, contentT
 		    	});
 			    
 		    } else {
+				output = paths.resolve(
+					options.serve.path,
+					url.parse(request.url).pathname.replace(/^\//, ''),
+					output
+				);
+
 		    	// requested output file exists?
 				if (grunt.file.exists(output)) {
 					// write file
